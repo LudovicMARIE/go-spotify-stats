@@ -1,4 +1,4 @@
-package ingest
+package loader
 
 import (
 	"encoding/json"

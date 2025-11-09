@@ -4,9 +4,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/LudovicMARIE/go-spotify-stats/internal/ingest"
-	"github.com/LudovicMARIE/go-spotify-stats/internal/model"
-	"github.com/LudovicMARIE/go-spotify-stats/internal/process"
+	"github.com/LudovicMARIE/go-spotify-stats/internal/loader"
+	"github.com/LudovicMARIE/go-spotify-stats/internal/root"
 	"github.com/spf13/cobra"
 )
 
@@ -30,60 +29,15 @@ var rootCmd = &cobra.Command{
 		}
 	},
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Printf("Using data directory: %s\n", DataDir)
-
-		files, err := os.ReadDir(DataDir)
+		fmt.Println("Loading data from:", DataDir)
+		allPlays, err := loader.LoadAllPlays(DataDir)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "error reading data directory: %v\n", err)
+			fmt.Fprintf(os.Stderr, "Error loading data: %v\n", err)
 			os.Exit(1)
 		}
 
-		var allPlays []model.Play
-		playsChan := make(chan []model.Play, len(files)) // Buffered channel to hold plays from each file
-		errChan := make(chan error, len(files))          // Channel to hold errors from each file
-		done := make(chan bool)                          // Channel to signal completion of each goroutine
-		var numFiles int
-
-		for _, f := range files {
-			if f.IsDir() {
-				continue
-			}
-			numFiles++
-			filePath := DataDir + "/" + f.Name()
-			go func(filePath string, fileName string) {
-				defer func() { done <- true }()
-
-				plays, err := ingest.LoadTargetsFromFile(filePath)
-				if err != nil {
-					errChan <- fmt.Errorf("error loading data from file %s: %v", fileName, err)
-					return
-				}
-				playsChan <- plays
-				errChan <- nil
-			}(filePath, f.Name())
-		}
-
-		go func() {
-			for i := 0; i < numFiles; i++ {
-				<-done
-			}
-			close(playsChan)
-			close(errChan)
-		}()
-
-		for err := range errChan {
-			if err != nil {
-				fmt.Fprintln(os.Stderr, err)
-			}
-		}
-
-		for plays := range playsChan {
-			allPlays = append(allPlays, plays...)
-		}
-
-		fmt.Printf("Loaded %d plays from %d files\n", len(allPlays), len(files))
-
-		process.ProcessPlays(&allPlays)
+		fmt.Printf("Successfully loaded %d plays.\n", len(allPlays))
+		root.RootMain()
 	},
 }
 
@@ -97,4 +51,7 @@ func Execute() {
 func init() {
 	// Add a persistent flag so every subcommand inherits it.
 	rootCmd.PersistentFlags().StringVarP(&DataDir, "data-dir", "d", ".", "Directory to put the data files")
+
+	//TODO:
+	// add apiCmd and tuiCmd
 }

@@ -1,4 +1,4 @@
-package process
+package stats
 
 import "github.com/LudovicMARIE/go-spotify-stats/internal/model"
 
