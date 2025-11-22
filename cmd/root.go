@@ -12,7 +12,7 @@ import (
 var DataDir string
 
 var rootCmd = &cobra.Command{
-	Use:   "go-spoti-stats",
+	Use:   "",
 	Short: "go spoti stats is a tool used to generate differents statistics based on your own spotify data",
 	Long: `go spoti stats is a tool used to generate differents statistics based on your own spotify data.
 	You can use it to analyze your listening habits, discover trends, and visualize your music preferences over time.
@@ -41,7 +41,7 @@ var rootCmd = &cobra.Command{
 	},
 }
 
-func Execute() {
+func ExecuteRoot() {
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Fprintf(os.Stderr, "%v\n", err)
 		os.Exit(1)
@@ -52,6 +52,4 @@ func init() {
 	// Add a persistent flag so every subcommand inherits it.
 	rootCmd.PersistentFlags().StringVarP(&DataDir, "data-dir", "d", ".", "Directory to put the data files")
 
-	//TODO:
-	// add apiCmd and tuiCmd
 }
